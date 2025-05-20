@@ -1,8 +1,8 @@
 import styled from "styled-components";
 import {
-    defaultBorderRadius,
-    lightGray,
-    vscForeground,
+  defaultBorderRadius,
+  lightGray,
+  vscForeground,
 } from "../../components";
 import { ToolTip } from "../../components/gui/Tooltip";
 import { getPlatform, isJetBrains } from "../../util";

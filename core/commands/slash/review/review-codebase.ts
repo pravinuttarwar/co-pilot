@@ -1,10 +1,9 @@
+import * as fs from "fs";
 import * as path from "node:path";
 import * as os from "os";
-import * as fs from "fs";
 
 import { ContextProviderExtras, ContinueSDK, SlashCommand } from "../../../index.js";
 import { renderChatMessage } from "../../../util/messageContent.js";
-import { retrieveContextItemsFromEmbeddings } from "../../../context/retrieval/retrieval.js";
 
 const CONTINUE_GLOBAL_DIR = path.join(os.homedir(), ".epico-pilot");
 
@@ -16,11 +15,11 @@ async function getCodebase(sdk: ContinueSDK) {
   const extras = {
     config: sdk.config,
     llm: sdk.llm,
-    embeddingsProvider: sdk.config?.embeddingsProvider,
+    embeddingsProvider: sdk.config?.selectedModelByRole?.embed,
     fullInput: "",
     ide: sdk.ide,
     selectedCode: sdk.selectedCode,
-    reranker: sdk.config?.reranker,
+    reranker: sdk.config?.selectedModelByRole?.rerank,
     fetch,
   } as ContextProviderExtras;
 
@@ -38,11 +37,11 @@ async function sendCodeToOllama(sdk: ContinueSDK) {
   const extras = {
     config: sdk.config,
     llm: sdk.llm,
-    embeddingsProvider: sdk.config?.embeddingsProvider,
+    embeddingsProvider: sdk.config?.selectedModelByRole?.embed,
     fullInput: "",
     ide: sdk.ide,
     selectedCode: sdk.selectedCode,
-    reranker: sdk.config?.reranker,
+    reranker: sdk.config?.selectedModelByRole?.rerank,
     fetch,
   } as ContextProviderExtras;
 
@@ -70,14 +69,14 @@ async function sendCodeToOllama(sdk: ContinueSDK) {
   const apiKey = session.apiKey;
 
   for (let chunk of chunks) {
-      let payload = {
-          model: sdk.llm?.model,
-          messages: [{ role: "user", content: chunk }],
-          context
+      const payload = {
+        model: sdk.llm?.model,
+        messages: [{ role: "user", content: chunk }],
+        context
       };
 
       try {
-          const response = await fetch(`${sdk.llm?.model}/api/chat`, {
+          const response: Response = await fetch(`${sdk.llm?.model}/api/chat`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

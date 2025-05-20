@@ -169,6 +169,7 @@ extensions/intellij/.idea/**
 
 extensions/intellij/bin
 extensions/.epico-pilot-debug/
+extensions/.epico-pilot/
 
 *.vsix
 

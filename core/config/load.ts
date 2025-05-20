@@ -4,38 +4,38 @@ import os from "os";
 import path from "path";
 
 import {
-    ConfigResult,
-    ConfigValidationError,
-    ModelRole,
+  ConfigResult,
+  ConfigValidationError,
+  ModelRole,
 } from "@continuedev/config-yaml";
 import { fetchwithRequestOptions } from "@continuedev/fetch";
 import * as JSONC from "comment-json";
 import * as tar from "tar";
 
 import {
-    BrowserSerializedContinueConfig,
-    Config,
-    ContextProviderWithParams,
-    ContinueConfig,
-    ContinueRcJson,
-    CustomContextProvider,
-    CustomLLM,
-    EmbeddingsProviderDescription,
-    IContextProvider,
-    IDE,
-    IdeInfo,
-    IdeSettings,
-    IdeType,
-    ILLM,
-    LLMOptions,
-    ModelDescription,
-    RerankerDescription,
-    SerializedContinueConfig,
-    SlashCommand,
+  BrowserSerializedContinueConfig,
+  Config,
+  ContextProviderWithParams,
+  ContinueConfig,
+  ContinueRcJson,
+  CustomContextProvider,
+  CustomLLM,
+  EmbeddingsProviderDescription,
+  IContextProvider,
+  IDE,
+  IdeInfo,
+  IdeSettings,
+  IdeType,
+  ILLM,
+  LLMOptions,
+  ModelDescription,
+  RerankerDescription,
+  SerializedContinueConfig,
+  SlashCommand,
 } from "..";
 import {
-    slashCommandFromDescription,
-    slashFromCustomCommand,
+  slashCommandFromDescription,
+  slashFromCustomCommand,
 } from "../commands/index";
 import { AllRerankers } from "../context/allRerankers";
 import { MCPManagerSingleton } from "../context/mcp";
@@ -59,22 +59,22 @@ import { copyOf } from "../util";
 import { GlobalContext } from "../util/GlobalContext";
 import mergeJson from "../util/merge";
 import {
-    DEFAULT_CONFIG_TS_CONTENTS,
-    getConfigJsonPath,
-    getConfigJsonPathForRemote,
-    getConfigJsPath,
-    getConfigJsPathForRemote,
-    getConfigTsPath,
-    getContinueDotEnv,
-    getEsbuildBinaryPath,
+  DEFAULT_CONFIG_TS_CONTENTS,
+  getConfigJsonPath,
+  getConfigJsonPathForRemote,
+  getConfigJsPath,
+  getConfigJsPathForRemote,
+  getConfigTsPath,
+  getContinueDotEnv,
+  getEsbuildBinaryPath,
 } from "../util/paths";
 import { localPathToUri } from "../util/pathToUri";
 
 import {
-    defaultContextProvidersJetBrains,
-    defaultContextProvidersVsCode,
-    defaultSlashCommandsJetBrains,
-    defaultSlashCommandsVscode,
+  defaultContextProvidersJetBrains,
+  defaultContextProvidersVsCode,
+  defaultSlashCommandsJetBrains,
+  defaultSlashCommandsVscode,
 } from "./default";
 import { getSystemPromptDotFile } from "./getSystemPromptDotFile";
 import { modifyAnyConfigWithSharedConfig } from "./sharedConfig";
@@ -958,9 +958,9 @@ async function loadContinueConfigFromJson(
 }
 
 export {
-    finalToBrowserConfig,
-    intermediateToFinalConfig,
-    loadContinueConfigFromJson,
-    type BrowserSerializedContinueConfig
+  finalToBrowserConfig,
+  intermediateToFinalConfig,
+  loadContinueConfigFromJson,
+  type BrowserSerializedContinueConfig
 };
 

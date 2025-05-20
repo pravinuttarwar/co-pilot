@@ -4,6 +4,10 @@ import { TeamAnalytics } from "../control-plane/TeamAnalytics.js";
 import { IdeInfo } from "../index.js";
 
 import type { PostHog as PostHogType } from "posthog-node";
+import { LOCAL_DEV_DATA_VERSION } from "../data/log.js";
+import { getDevDataFilePath } from "./paths.js";
+
+import * as fs from "fs";
 
 export enum PosthogFeatureFlag {
   AutocompleteTimeout = "autocomplete-timeout",
@@ -36,6 +40,8 @@ export class Telemetry {
   static uniqueId = "NOT_UNIQUE";
   static os: string | undefined = undefined;
   static ideInfo: IdeInfo | undefined = undefined;
+  static personName: string = "";
+  static personEmail: string = "";
 
   static async capture(
     event: string,
@@ -50,6 +56,9 @@ export class Telemetry {
         extensionVersion: Telemetry.ideInfo?.extensionVersion,
         ideName: Telemetry.ideInfo?.name,
         ideType: Telemetry.ideInfo?.ideType,
+        accountName: Telemetry.personName,
+        accountEmail: Telemetry.personEmail,
+        lastSeen: new Date().toISOString(),
       };
       const payload = {
         distinctId: Telemetry.uniqueId,
@@ -86,7 +95,7 @@ export class Telemetry {
   static async getTelemetryClient(): Promise<PostHogType | undefined> {
     try {
       const { PostHog } = await import("posthog-node");
-      return new PostHog("phc_fhpVNKE9FlZLxdiBN88s01gBkgoOxHnjtKZuVqX7ZaX", {
+      return new PostHog(process.env.POSTHOG_API_KEY, {
         host: "https://app.posthog.com",
       });
     } catch (e) {
@@ -98,6 +107,19 @@ export class Telemetry {
     Telemetry.uniqueId = uniqueId;
     Telemetry.os = os.platform();
     Telemetry.ideInfo = ideInfo;
+    const sessionPath = getDevDataFilePath('session', LOCAL_DEV_DATA_VERSION);
+    
+    let session;
+    try {
+      session = JSON.parse(fs.readFileSync(
+        sessionPath,
+        "utf8"
+      ));
+      Telemetry.personName = session.account.label ?? "";
+      Telemetry.personEmail = session.account.id ?? "";
+    } catch {
+      console.log("Error:", "Need to login first");
+    }
 
     if (!allow || process.env.NODE_ENV === "test") {
       Telemetry.client = undefined;

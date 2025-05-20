@@ -74,7 +74,6 @@ export const streamNormalInput = createAsyncThunk<
     // Attach prompt log
     if (next.done && next.value) {
       dispatch(addPromptCompletionPair([next.value]));
-
       try {
         if (state.session.mode === "chat") {
           extra.ideMessenger.post("devdata/log", {

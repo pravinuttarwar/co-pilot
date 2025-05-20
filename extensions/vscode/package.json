@@ -2,7 +2,7 @@
   "name": "epico-pilot",
   "icon": "media/icon.png",
   "author": "Mindbowser",
-  "version": "0.2.2",
+  "version": "0.2.16",
   "repository": {
     "type": "git",
     "url": "https://github.com/Mindbowser/co-pilot"

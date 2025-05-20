@@ -1,17 +1,15 @@
 import { Cog8ToothIcon } from "@heroicons/react/24/outline";
-import { DISCORD_LINK, GITHUB_LINK } from "core/util/constants";
 import { useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button, SecondaryButton } from "../../components";
-import { DiscordIcon } from "../../components/svg/DiscordIcon";
-import { GithubIcon } from "../../components/svg/GithubIcon";
+import { isNewUserOnboarding, useOnboardingCard } from "../../components/OnboardingCard";
 import { useAuth } from "../../context/Auth";
 import { IdeMessengerContext } from "../../context/IdeMessenger";
 import { selectSelectedProfile } from "../../redux/";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { selectUseHub } from "../../redux/selectors";
-import { selectDefaultModel } from "../../redux/slices/configSlice";
+import { selectDefaultModel, setAccount } from "../../redux/slices/configSlice";
 import { setDialogMessage, setShowDialog } from "../../redux/slices/uiSlice";
-import { isLocalProfile } from "../../util";
 import { providers } from "../AddNewModel/configs/providers";
 
 interface StreamErrorProps {
@@ -24,6 +22,8 @@ const StreamErrorDialog = ({ error }: StreamErrorProps) => {
   const hubEnabled = useAppSelector(selectUseHub);
   const selectedProfile = useAppSelector(selectSelectedProfile);
   const { session, refreshProfiles } = useAuth();
+  const navigate = useNavigate();
+  const onboardingCard = useOnboardingCard();
 
   const handleRefreshProfiles = () => {
     refreshProfiles();
@@ -103,6 +103,25 @@ const StreamErrorDialog = ({ error }: StreamErrorProps) => {
     </SecondaryButton>
   );
 
+  const logoutButton = (
+    <SecondaryButton
+      onClick={() => {
+        ideMessenger.post("logoutOfControlPlane", undefined);
+        dispatch(setAccount({
+          accountEmail: "",
+          accountName: "",
+        }));
+        isNewUserOnboarding();
+        onboardingCard.open("Quickstart");
+        dispatch(setDialogMessage(undefined));
+        dispatch(setShowDialog(false));
+        navigate("/");
+      }}
+    >
+      Login Again
+    </SecondaryButton>
+  );
+
   let errorContent: React.ReactNode = <></>;
 
   // Display components for specific errors
@@ -154,21 +173,9 @@ const StreamErrorDialog = ({ error }: StreamErrorProps) => {
   if (statusCode === 401) {
     errorContent = (
       <div className="flex flex-col gap-2">
-        {hubEnabled &&
-          session &&
-          selectedProfile &&
-          !isLocalProfile(selectedProfile) && (
-            <div className="flex flex-col gap-1">
-              <span>{`If your hub secret values may have changed, refresh your assistants`}</span>
-              <SecondaryButton onClick={handleRefreshProfiles}>
-                Refresh assistant secrets
-              </SecondaryButton>
-            </div>
-          )}
-        <span>{`It's possible that your API key is invalid.`}</span>
+        <span>Please Login again.</span>
         <div className="flex flex-row flex-wrap gap-2">
-          {checkKeysButton}
-          {configButton}
+          {logoutButton}
         </div>
       </div>
     );
@@ -225,27 +232,6 @@ const StreamErrorDialog = ({ error }: StreamErrorProps) => {
       <div className="mt-3">{errorContent}</div>
 
       <div className="mt-2 flex flex-col gap-1.5">
-        <span>Report this error:</span>
-        <div className="flex flex-row flex-wrap items-center gap-2">
-          <SecondaryButton
-            className="flex flex-row items-center gap-2 hover:opacity-70"
-            onClick={() => {
-              ideMessenger.post("openUrl", GITHUB_LINK);
-            }}
-          >
-            <GithubIcon className="h-5 w-5" />
-            <span className="xs:flex hidden">Github</span>
-          </SecondaryButton>
-          <SecondaryButton
-            className="flex flex-row items-center gap-2 hover:opacity-70"
-            onClick={() => {
-              ideMessenger.post("openUrl", DISCORD_LINK);
-            }}
-          >
-            <DiscordIcon className="h-5 w-5" />
-            <span className="xs:flex hidden">Discord</span>
-          </SecondaryButton>
-        </div>
         <div className="flex flex-row justify-end">
           <Button
             onClick={() => {

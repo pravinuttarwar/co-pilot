@@ -26,6 +26,11 @@ class Calculator {
     return this;
   }
 
+  mod(number) {
+    this.result %= number;
+    return this;
+  }
+
   getResult() {
     return this.result;
   }

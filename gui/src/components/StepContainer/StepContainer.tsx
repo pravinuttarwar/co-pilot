@@ -75,7 +75,7 @@ export default function StepContainer(props: StepContainerProps) {
       {
         messageType: "userInput",
         data: {
-          input: "Epico Pilot your response exactly where you left off:",
+          input: "Continue your response exactly where you left off:",
         },
       },
       "*",

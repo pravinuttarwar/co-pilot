@@ -432,7 +432,7 @@ function GUI() {
                                   messageType: "userInput",
                                   data: {
                                     input:
-                                      "Epico Pilot your response exactly where you left off:",
+                                      "Continue your response exactly where you left off:",
                                   },
                                 },
                                 "*",
@@ -1070,7 +1070,7 @@ function GUI() {
                                   messageType: "userInput",
                                   data: {
                                     input:
-                                      "Epico Pilot your response exactly where you left off:",
+                                      "Continue your response exactly where you left off:",
                                   },
                                 },
                                 "*",

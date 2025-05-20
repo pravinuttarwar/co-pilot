@@ -3,27 +3,31 @@ import { v4 as uuidv4 } from "uuid";
 
 import { isSupportedLanceDbCpuTargetForLinux } from "../config/util";
 import {
-    BranchAndDir,
-    Chunk,
-    ILLM,
-    IndexTag,
-    IndexingProgressUpdate,
+  BranchAndDir,
+  Chunk,
+  ILLM,
+  IndexTag,
+  IndexingProgressUpdate,
 } from "../index";
-import { getLanceDbPath, migrate } from "../util/paths";
+import { getLanceDbPath, getRemoteLanceDbPath, migrate } from "../util/paths";
 import { getUriPathBasename } from "../util/uri";
 
 import { basicChunker } from "./chunk/basic.js";
 import { chunkDocument, shouldChunk } from "./chunk/chunk.js";
 import { DatabaseConnection, SqliteDb, tagToString } from "./refreshIndex.js";
 import {
-    CodebaseIndex,
-    IndexResultType,
-    MarkCompleteCallback,
-    PathAndCacheKey,
-    RefreshIndexResults,
+  CodebaseIndex,
+  IndexResultType,
+  MarkCompleteCallback,
+  PathAndCacheKey,
+  RefreshIndexResults,
 } from "./types";
 
 import type * as LanceType from "vectordb";
+import lance from "vectordb";
+
+const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
+const AWS_SECRET_KEY = process.env.AWS_SECRET_KEY;
 
 interface LanceDbRow {
   uuid: string;
@@ -63,7 +67,6 @@ export class LanceDbIndex implements CodebaseIndex {
     }
 
     try {
-      this.lance = await import("vectordb");
       return new LanceDbIndex(embeddingsProvider, readFile);
     } catch (err) {
       console.error("Failed to load LanceDB:", err);
@@ -71,13 +74,11 @@ export class LanceDbIndex implements CodebaseIndex {
     }
   }
 
-  private constructor(
+  constructor(
     private readonly embeddingsProvider: ILLM,
-    private readonly readFile: (filepath: string) => Promise<string>,
+    private readonly readFile?: (filepath: string) => Promise<string>,
   ) {
-    if (!LanceDbIndex.lance) {
-      throw new Error("LanceDB not initialized");
-    }
+    LanceDbIndex.lance = lance;
   }
 
   tableNameForTag(tag: IndexTag) {
@@ -151,14 +152,16 @@ export class LanceDbIndex implements CodebaseIndex {
 
     for (const item of items) {
       try {
-        const content = await this.readFile(item.path);
-
-        if (!shouldChunk(item.path, content)) {
-          continue;
+        if (this.readFile) {
+          const content = await this.readFile(item.path);
+  
+          if (!shouldChunk(item.path, content)) {
+            continue;
+          }
+  
+          const chunks = await this.getChunks(item, content);
+          chunkMap.set(item.path, { item, chunks });
         }
-
-        const chunks = await this.getChunks(item, content);
-        chunkMap.set(item.path, { item, chunks });
       } catch (err) {
         console.log(`LanceDBIndex, skipping ${item.path}: ${err}`);
       }
@@ -380,8 +383,9 @@ export class LanceDbIndex implements CodebaseIndex {
     directory: string | undefined,
     vector: number[],
     db: any,
+    remote?: boolean,
   ): Promise<LanceDbRow[]> {
-    const tableName = this.tableNameForTag(tag);
+    const tableName = remote ? directory : this.tableNameForTag(tag);
     const tableNames = await db.tableNames();
     if (!tableNames.includes(tableName)) {
       console.warn("Table not found in LanceDB", tableName);
@@ -389,12 +393,8 @@ export class LanceDbIndex implements CodebaseIndex {
     }
 
     const table = await db.openTable(tableName);
-    let query = table.search(vector);
-    if (directory) {
-      query = query.where(`path LIKE '${directory}%'`).limit(300);
-    } else {
-      query = query.limit(n);
-    }
+    let query = table.search(vector ?? []);
+    query = query.limit(n);
     const results = await query.execute();
     return results.slice(0, n) as any;
   }
@@ -404,6 +404,7 @@ export class LanceDbIndex implements CodebaseIndex {
     n: number,
     tags: BranchAndDir[],
     filterDirectory: string | undefined,
+    remote: boolean = false,
   ): Promise<Chunk[]> {
     const lance = LanceDbIndex.lance!;
     if (!this.embeddingsProvider) {
@@ -428,7 +429,24 @@ export class LanceDbIndex implements CodebaseIndex {
       [vector] = await this.embeddingsProvider.embed([query]);
     }
 
-    const db = await lance.connect(getLanceDbPath());
+    let lanceDbPath = "";
+    let db;
+
+    if (remote) { 
+      lanceDbPath = getRemoteLanceDbPath(); 
+      db = await lance.connect({
+        uri: lanceDbPath,
+        awsRegion: "us-east-1",
+        awsCredentials: {
+          accessKeyId:AWS_ACCESS_KEY_ID,
+          secretKey: AWS_SECRET_KEY,
+        }
+      });
+    }
+    else { 
+      lanceDbPath = getLanceDbPath(); 
+      db = await lance.connect(lanceDbPath);
+    }
 
     let allResults = [];
     for (const tag of tags) {
@@ -438,6 +456,7 @@ export class LanceDbIndex implements CodebaseIndex {
         filterDirectory,
         vector,
         db,
+        remote,
       );
       allResults.push(...results);
     }
@@ -446,23 +465,37 @@ export class LanceDbIndex implements CodebaseIndex {
       .sort((a, b) => a._distance - b._distance)
       .slice(0, n);
 
-    const sqliteDb = await SqliteDb.get();
-    const data = await sqliteDb.all(
-      `SELECT * FROM lance_db_cache WHERE uuid in (${allResults
-        .map((r) => `'${r.uuid}'`)
-        .join(",")})`,
-    );
+    if (remote) {
+      return allResults.map((d) => {
+        return {
+          digest: d.cacheKey,
+          filepath: d.path,
+          startLine: d.startLine,
+          endLine: d.endLine,
+          index: 0,
+          content: d.contents,
+        };
+      });
+    } else {
+      const sqliteDb = await SqliteDb.get();
+      const data = await sqliteDb.all(
+        `SELECT * FROM lance_db_cache WHERE uuid in (${allResults
+          .map((r) => `'${r.uuid}'`)
+          .join(",")})`,
+      );
+  
+      return data.map((d) => {
+        return {
+          digest: d.cacheKey,
+          filepath: d.path,
+          startLine: d.startLine,
+          endLine: d.endLine,
+          index: 0,
+          content: d.contents,
+        };
+      });
+    }
 
-    return data.map((d) => {
-      return {
-        digest: d.cacheKey,
-        filepath: d.path,
-        startLine: d.startLine,
-        endLine: d.endLine,
-        index: 0,
-        content: d.contents,
-      };
-    });
   }
 
   private async insertRows(

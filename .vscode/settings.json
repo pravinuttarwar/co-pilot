@@ -46,5 +46,8 @@
     // "sync/**": true
   },
   "eslint.workingDirectories": ["./core"],
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "cSpell.words": [
+    "Epico"
+  ]
 }

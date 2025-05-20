@@ -1,5 +1,6 @@
 import { ChatMessage, CompletionOptions, LLMOptions } from "../../index.js";
 import { renderChatMessage, stripImages } from "../../util/messageContent.js";
+import { Telemetry } from "../../util/posthog.js";
 import { BaseLLM } from "../index.js";
 import { streamSse } from "../stream.js";
 
@@ -168,7 +169,7 @@ class Anthropic extends BaseLLM {
   ): AsyncGenerator<ChatMessage> {
     if (!this.apiKey || this.apiKey === "") {
       throw new Error(
-        "Request not sent. You have an Anthropic model configured in your config.json, but the API key is not set.",
+        "Something went wrong. Please login and try again.",
       );
     }
 
@@ -210,7 +211,7 @@ class Anthropic extends BaseLLM {
       if (json.type === "error") {
         if (json.error?.type === "overloaded_error") {
           throw new Error(
-            "The Anthropic API is currently overloaded. Please check their status page: https://status.anthropic.com/#past-incidents",
+            "The Anthropic API is currently overloaded. Please try again in few minutes.",
           );
         }
         throw new Error(json.message);
@@ -230,7 +231,24 @@ class Anthropic extends BaseLLM {
     let lastToolUseName: string | undefined;
     for await (const value of streamSse(response)) {
       // https://docs.anthropic.com/en/api/messages-streaming#event-types
+      const type = options?.stop?.includes('</COMPLETION>') ? 'autocomplete' : 'chat';
       switch (value.type) {
+        case "message_start":
+          const inputTokens = value.message.usage.input_tokens;
+          void Telemetry.capture(
+            "input_tokens",
+            { type, inputTokens },
+            true,
+          );
+          break;
+        case "message_delta":
+          const outputTokens = value.usage.output_tokens;
+          void Telemetry.capture(
+            "output_tokens",
+            { type, outputTokens },
+            true,
+          );
+          break;
         case "content_block_start":
           if (value.content_block.type === "tool_use") {
             lastToolUseId = value.content_block.id;

@@ -105,6 +105,7 @@ export class AutocompleteLoggingService {
     });
 
     const { prompt, completion, prefix, suffix, ...restOfOutcome } = outcome;
+    console.log("outcome", outcome);
     void Telemetry.capture(
       "autocomplete",
       {

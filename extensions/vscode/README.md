@@ -1,6 +1,6 @@
 <div align="center">
 
-![Epico-Pilot logo](/docs/static/img/Logo-Epico-Pilot.png)
+![Epico-Pilot logo](https://raw.githubusercontent.com/pravinuttarwar/co-pilot/refs/heads/merge-changes-v0.2/docs/static/img/icon.png)
 
 </div>
 
@@ -24,28 +24,24 @@
 
 Chat makes it easy to ask for help from an LLM without needing to leave the IDE
 
-![chat](/docs/static/img/chat.gif)
+![chat](https://raw.githubusercontent.com/pravinuttarwar/co-pilot/refs/heads/dev_rahul/docs/static/img/chat.gif)
 
 ## Autocomplete
 
 Autocomplete provides inline code suggestions as you type
 
-![autocomplete](/docs/static/img/autocomplete.gif)
+![autocomplete](https://raw.githubusercontent.com/pravinuttarwar/co-pilot/refs/heads/dev_rahul/docs/static/img/autocomplete.gif)
 
 ## Edit
 
 Edit is a convenient way to modify code without leaving your current file
 
-![edit](/docs/static/img/edit.gif)
+![edit](https://raw.githubusercontent.com/pravinuttarwar/co-pilot/refs/heads/dev_rahul/docs/static/img/edit.gif)
 
 ## Actions
 
 There are many actions which can be performed to modify code without leaving your current file
 
-![actions](/docs/static/img/actions.gif)
+![actions](https://raw.githubusercontent.com/pravinuttarwar/co-pilot/refs/heads/dev_rahul/docs/static/img/actions.gif)
 
 </div>
-
-## License
-
-[Apache 2.0 © 2023-2024 Continue Dev, Inc.](./LICENSE)

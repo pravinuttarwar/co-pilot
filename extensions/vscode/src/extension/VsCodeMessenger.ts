@@ -16,9 +16,12 @@ import {
 } from "core/protocol/passThrough";
 import { stripImages } from "core/util/messageContent";
 import { getUriPathBasename } from "core/util/uri";
+import * as fs from "fs";
 import * as vscode from "vscode";
 
 import { ILLM } from "core";
+import { LOCAL_DEV_DATA_VERSION } from "core/data/log";
+import { getDevDataFilePath } from "core/util/paths";
 import { VerticalDiffManager } from "../diff/vertical/manager";
 import EditDecorationManager from "../quickEdit/EditDecorationManager";
 import {
@@ -435,6 +438,8 @@ export class VsCodeMessenger {
       );
     });
     this.onWebviewOrCore("logoutOfControlPlane", async (msg) => {
+      const sessionPath = getDevDataFilePath('session', LOCAL_DEV_DATA_VERSION);
+      fs.unlinkSync(sessionPath);
       const sessions = await this.workOsAuthProvider.getSessions();
       await Promise.all(
         sessions.map((session) => workOsAuthProvider.removeSession(session.id)),

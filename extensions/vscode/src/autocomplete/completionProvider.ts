@@ -1,10 +1,11 @@
 import { CompletionProvider } from "core/autocomplete/CompletionProvider";
 import { processSingleLineCompletion } from "core/autocomplete/util/processSingleLineCompletion";
 import {
-    type AutocompleteInput,
-    type AutocompleteOutcome,
+  type AutocompleteInput,
+  type AutocompleteOutcome,
 } from "core/autocomplete/util/types";
 import { ConfigHandler } from "core/config/ConfigHandler";
+import * as fs from "fs";
 import * as URI from "uri-js";
 import { v4 as uuidv4 } from "uuid";
 import * as vscode from "vscode";
@@ -16,13 +17,15 @@ import { getDefinitionsFromLsp } from "./lsp";
 import { RecentlyEditedTracker } from "./recentlyEdited";
 import { RecentlyVisitedRangesService } from "./RecentlyVisitedRangesService";
 import {
-    StatusBarStatus,
-    getStatusBarStatus,
-    setupStatusBar,
-    stopStatusBarLoading,
+  StatusBarStatus,
+  getStatusBarStatus,
+  setupStatusBar,
+  stopStatusBarLoading,
 } from "./statusBar";
 
 import type { IDE } from "core";
+import { LOCAL_DEV_DATA_VERSION } from "core/data/log";
+import { getDevDataFilePath } from "core/util/paths";
 import { handleLLMError } from "../util/errorHandling";
 
 interface VsCodeCompletionInput {
@@ -34,6 +37,7 @@ interface VsCodeCompletionInput {
 export class ContinueCompletionProvider
   implements vscode.InlineCompletionItemProvider {
   private onError(e: any) {
+    const options = [];
     if (handleLLMError(e)) {
       return;
     }
@@ -48,13 +52,12 @@ export class ContinueCompletionProvider
       );
       return;
     }
-    vscode.window.showErrorMessage(message, "Documentation").then((val) => {
-      if (val === "Documentation") {
-        vscode.env.openExternal(
-          vscode.Uri.parse(
-            "https://docs.epico-pilot.dev/features/tab-autocomplete",
-          ),
-        );
+    if (e.message.includes("JWT is expired")) options.push("Login with Epico");
+    vscode.window.showErrorMessage(e.message, ...options).then((val) => {
+      if (val === "Login with Epico") {
+        const sessionPath = getDevDataFilePath('session', LOCAL_DEV_DATA_VERSION);
+        fs.unlinkSync(sessionPath);
+        vscode.commands.executeCommand("epico-pilot.continueGUIView.focus");
       }
     });
   }
