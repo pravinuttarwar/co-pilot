@@ -231,7 +231,7 @@ class Anthropic extends BaseLLM {
     let lastToolUseName: string | undefined;
     for await (const value of streamSse(response)) {
       // https://docs.anthropic.com/en/api/messages-streaming#event-types
-      const type = options?.stop?.includes('</COMPLETION>') ? 'autocomplete' : 'chat';
+      const type = options?.stop?.includes('</COMPLETION>') ? 'autocomplete' : 'userInput';
       switch (value.type) {
         case "message_start":
           const inputTokens = value.message.usage.input_tokens;
